@@ -1,0 +1,7 @@
+This project allows your Jinzora server to be browsed as a UPnP Media Server. By setting this service up on your home network, you can, for example, browse your Jinzora content on a Playstation 3, Windows Media Player, or other UPnP compatible device.
+
+The UPnP bridge must be run on the network in which you'd like to connect to your UPnP devices, but the Jinzora server can be hosted remotely.
+
+This UPnP service is also available in the Jinzora Mobile for Android application.
+
+You must configure your service using the src/main/resources/jinzora.properties file.

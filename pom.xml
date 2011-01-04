@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>edu.stanford.prpl</groupId>
+    <artifactId>junction</artifactId>
+    <version>current</version>
+  </parent>
+
+  <groupId>org.jinzora</groupId>
+  <artifactId>jinzora-upnp-server</artifactId>
+  <version>0.1</version>
+  <packaging>jar</packaging>
+  <name>Jinzora-UPnP</name>
+  <description>Jinzora UPnP content directory</description>
+
+ <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <source>1.6</source>
+          <target>1.6</target>
+          <debug>true</debug>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.teleal.cling</groupId>
+      <artifactId>cling-core</artifactId>
+      <version>1.0-beta9</version>
+    </dependency>
+    <dependency>
+      <groupId>org.teleal.cling</groupId>
+      <artifactId>cling-support</artifactId>
+      <version>1.0-beta9</version>
+    </dependency>
+    <dependency>
+      <groupId>json</groupId>
+      <artifactId>json</artifactId>
+      <version>1.0</version>
+    </dependency>
+  </dependencies>
+
+  <repositories>
+    <repository>
+      <id>prpl-public</id>
+      <name>PrPl Public Files</name>
+      <url>http://prpl.stanford.edu:8081/nexus/content/groups/public</url>
+    </repository>
+    
+    <repository>
+        <id>teleal.org-repo</id>
+        <url>http://teleal.org/m2</url>
+        <snapshots>
+            <enabled>false</enabled>
+        </snapshots>
+    </repository>
+  </repositories>
+  
+  <pluginRepositories>
+    <pluginRepository>
+        <id>teleal.org-repo</id>
+        <url>http://teleal.org/m2</url>
+        <snapshots>
+            <enabled>false</enabled>
+        </snapshots>
+    </pluginRepository>
+  </pluginRepositories>
+</project>
