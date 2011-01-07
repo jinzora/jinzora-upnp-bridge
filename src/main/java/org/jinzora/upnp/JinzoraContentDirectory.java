@@ -262,17 +262,17 @@ public class JinzoraContentDirectory extends AbstractContentDirectoryService {
 			
 			if (isHome) {
 				JSONArray home = new JSONArray(content);
-				addDidlNodes(didl, home);
+				mApi.addDidlNodes(didl, home);
 			} else {
 				JSONObject obj = new JSONObject(content);
 				JSONArray nodes = obj.optJSONArray("nodes");
 				
 				if (nodes != null) {
-					addDidlNodes(didl, nodes);
+					mApi.addDidlNodes(didl, nodes);
 				}
 				nodes = obj.optJSONArray("tracks");
 				if (nodes != null) {
-					addDidlTracks(didl, nodes);
+					mApi.addDidlTracks(didl, nodes);
 				}
 				JSONObject meta = obj.optJSONObject("meta");
 				if (meta != null) {
@@ -297,59 +297,6 @@ public class JinzoraContentDirectory extends AbstractContentDirectoryService {
 		} catch (JSONException e) {
 			Log.d(TAG, "Json content not found", e);
 			return null;
-		}
-	}
-	
-	private void addDidlNodes(DIDLContent didl, JSONArray browse) throws JSONException {
-		for (int i = 0; i < browse.length(); i++) {
-			JSONObject obj = browse.getJSONObject(i);
-			String url = obj.getString("browse");
-			String label = obj.getString("name");
-			String thumbnail = obj.optString("image");
-			Integer subCount = Integer.parseInt(obj.optString("count", "10"));
-
-			// Hack so we can easily get container label in request for metadata.
-			try {
-				url += "&label=" + URLEncoder.encode(label,"UTF-8");
-			} catch (UnsupportedEncodingException e) {}
-			
-			
-			// TODO: Use Album/Artist containers where appropriate. Check "type" field.
-			//Container folder = new StorageFolder(url,"0",label,"Me", subCount, storageUsed);
-			Container folder = new Container(url, "0", label, "System", CONTAINER_CLASS, subCount);
-			String playlist = obj.optString("playlink");
-			if (playlist != null && playlist.length() > 0) {
-				MimeType mimeType = new MimeType("audio", "m3u");
-				Res res = new Res();
-				res.setProtocolInfo(new ProtocolInfo(mimeType));
-				res.setValue(playlist);
-				folder.addResource(res);
-				
-				if (thumbnail != null && thumbnail.length() > 0) {
-		        	try {
-		        		URI uri = new URI(thumbnail);
-		        		ALBUM_ART_URI albumArt = new ALBUM_ART_URI(uri);
-		        		// TODO: DLNA requires xml attribute:
-		        		// dlna:profileID="JPEG_TN" for jpeg thumbnails.
-		        		folder.addProperty(albumArt);
-		        	} catch (URISyntaxException e) {
-		        		Log.w(TAG, "Found album art but bad URI", e);
-		        	}
-		        }
-			}
-			didl.addContainer(folder);
-		}
-	}
-	
-	private void addDidlTracks(DIDLContent didl, JSONArray browse) {
-		for (int i = 0; i < browse.length(); i++) {
-			try {
-				JSONObject track = browse.getJSONObject(i);
-				MusicTrack musicTrack = JinzoraApi.jsonToMusicTrack(track);
-		        didl.addItem(musicTrack);
-			} catch (Exception e) {
-				Log.w(TAG, "Bad json entry", e);
-			}
 		}
 	}
 	

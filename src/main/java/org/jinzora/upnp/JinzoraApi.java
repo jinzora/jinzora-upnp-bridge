@@ -239,7 +239,7 @@ public class JinzoraApi {
 		return stringBuffer.toString();
 	}
 	
-	private void addDidlNodes(DIDLContent didl, JSONArray browse) throws JSONException {
+	public void addDidlNodes(DIDLContent didl, JSONArray browse) throws JSONException {
 		for (int i = 0; i < browse.length(); i++) {
 			JSONObject obj = browse.getJSONObject(i);
 			String url = obj.getString("browse");
@@ -296,7 +296,7 @@ public class JinzoraApi {
 		}
 	}
 	
-	private static void addDidlTracks(DIDLContent didl, JSONArray browse) {
+	public void addDidlTracks(DIDLContent didl, JSONArray browse) {
 		for (int i = 0; i < browse.length(); i++) {
 			try {
 				JSONObject track = browse.getJSONObject(i);
