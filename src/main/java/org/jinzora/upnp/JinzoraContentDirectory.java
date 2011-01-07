@@ -34,6 +34,7 @@ import org.teleal.cling.support.model.BrowseResult;
 import org.teleal.cling.support.model.DIDLContent;
 import org.teleal.cling.support.model.DIDLObject;
 import org.teleal.cling.support.model.PersonWithRole;
+import org.teleal.cling.support.model.Protocol;
 import org.teleal.cling.support.model.ProtocolInfo;
 import org.teleal.cling.support.model.Res;
 import org.teleal.cling.support.model.SortCriterion;
@@ -47,9 +48,28 @@ import org.teleal.common.util.MimeType;
 
 public class JinzoraContentDirectory extends AbstractContentDirectoryService {
 	private static final String TAG = "jinzora";
+	private static final String CREATOR = "jinzora";
 	private static final DIDLObject.Class CONTAINER_CLASS = new DIDLObject.Class("object.container");
 	final private CSV<String> mSearchCapabilities;
 	private final UpnpConfiguration mConfig = new UpnpConfiguration();
+	private final JinzoraApi mApi = new JinzoraApi(mConfig);
+	
+    public static final class DLNAFlags {
+  	  public static final int SENDER_PACED               = (1 << 31);
+  	  public static final int TIME_BASED_SEEK            = (1 << 30);
+  	  public static final int BYTE_BASED_SEEK            = (1 << 29);
+  	  public static final int FLAG_PLAY_CONTAINER        = (1 << 28);
+  	  public static final int S0_INCREASE                = (1 << 27);
+  	  public static final int SN_INCREASE                = (1 << 26);
+  	  public static final int RTSP_PAUSE                 = (1 << 25);
+  	  public static final int STREAMING_TRANSFER_MODE    = (1 << 24);
+  	  public static final int INTERACTIVE_TRANSFERT_MODE = (1 << 23);
+  	  public static final int BACKGROUND_TRANSFERT_MODE  = (1 << 22);
+  	  public static final int CONNECTION_STALL           = (1 << 21);
+  	  public static final int DLNA_V15                   = (1 << 20);
+  	  
+  	  public static final String TRAILING_ZEROS = "000000000000000000000000";
+  }
 	
 	public JinzoraContentDirectory() {
 		super();
@@ -128,85 +148,10 @@ public class JinzoraContentDirectory extends AbstractContentDirectoryService {
 	   Log.d(TAG, "criteria: " + searchCriteria);
 	   Log.d(TAG, "filter: " + filter);
 	   Log.d(TAG, "index / request: " + firstResult + ", " + maxResults);
-	   // UPnPlay
-	   // searching: 0: (upnp:class derivedfrom "object.item.audioItem") and (dc:title contains "oy")
-	   // searching: 0: (upnp:class derivedfrom "object.container.person.musicArtist") and (upnp:artist contains "pearl jam")
-	   /*
-	    * 01-02 19:01:37.483: DEBUG/jinzora(1409): container: 0
-01-02 19:01:37.483: DEBUG/jinzora(1409): criteria: (upnp:class derivedfrom "object.item.audioItem") and (dc:title contains "lazy")
-01-02 19:01:37.483: DEBUG/jinzora(1409): filter: *
-01-02 19:01:37.483: DEBUG/jinzora(1409): index / request: 0, 100
-	    */
 	   
-	   // WMP
-	   // searching: 0: upnp:class derivedfrom "object.container.playlistContainer" and @refID exists false
-	   // searching: 0: upnp:class derivedfrom "object.item.audioItem" and @refID exists false
-	   
-	   /*
-	    * 01-02 19:02:27.123: DEBUG/jinzora(1409): container: 0
-			01-02 19:02:27.123: DEBUG/jinzora(1409): criteria: upnp:class derivedfrom "object.item.audioItem" and @refID exists false
-			01-02 19:02:27.123: DEBUG/jinzora(1409): filter: *
-			01-02 19:02:27.123: DEBUG/jinzora(1409): index / request: 0, 200
-	    */
-	   
-	   // TODO
-	   // special case: only WMP scraping supported right now.
-	   if (searchCriteria == null || searchCriteria.equalsIgnoreCase("upnp:class derivedfrom \"object.item.audioItem\" and @refID exists false")) {
-		   return trackSlice(firstResult, maxResults);
-	   }
-	   
-	   return null;
+	   return super.search(containerId, searchCriteria, filter, firstResult, maxResults, orderBy);
    }
    
-   private BrowseResult trackSlice(long offset, long limit) {
-		String base = mConfig.getJinzoraEndpoint();
-		if (base == null) {
-			Log.w(TAG, "No jinzora service configured");
-			return null;
-		}
-		
-		URL url;
-		try {
-			base += "&request=browse&output=json&resulttype=track";
-			base += "&jz_path="+URLEncoder.encode("/","UTF-8");
-			base += "&limit="+ limit + "&offset=" + offset;
-			url = new URL(base);
-		} catch (Exception e) {
-			return null;
-		}
-		
-		String content;
-		try {
-			content = contentFromURL(url);
-		} catch (IOException e) {
-			Log.e(TAG, "Error grabbing json", e);
-			return null;
-		}
-		
-		DIDLContent didl;
-		int size = 0;
-		try {
-			didl = new DIDLContent();
-			JSONObject obj = new JSONObject(content);
-			JSONArray nodes = obj.optJSONArray("tracks");
-			size = nodes.length();
-			if (nodes != null) {
-				addDidlTracks(didl, nodes);
-			}
-		} catch (Exception e) {
-			Log.e(TAG, "Error creating didl", e);
-			return null;
-		}
-		
-		try {
-			Log.d(TAG, "search returned " + size);
-			return new BrowseResult(new DIDLParser().generate(didl), size, 20000);
-		} catch (Exception e) {
-			Log.e(TAG, "Error generating didl", e);
-			return null;
-		}
-   }
-	
 	private DIDLContent getMetadataDidl(String objectId) {
 		// TODO: currently only supports tracks and root container.
 		DIDLContent didl = new DIDLContent();
@@ -265,7 +210,7 @@ public class JinzoraContentDirectory extends AbstractContentDirectoryService {
 		String content;
 		JSONObject json;
 		try {
-			content = contentFromURL(url);
+			content = JinzoraApi.contentFromURL(url);
 		} catch (IOException e) {
 			Log.e(TAG, "Error accessing api", e);
 			return didl;
@@ -279,7 +224,7 @@ public class JinzoraContentDirectory extends AbstractContentDirectoryService {
 			Log.e(TAG, "Return type not json", e);
 			return didl;
 		}
-		didl.addItem(jsonToMusicTrack(json));
+		didl.addItem(JinzoraApi.jsonToMusicTrack(json));
 		return didl;
 	}
 	
@@ -312,7 +257,7 @@ public class JinzoraContentDirectory extends AbstractContentDirectoryService {
 		}
 		try {
 			DIDLContent didl = new DIDLContent();
-			String content = contentFromURL(url);
+			String content = JinzoraApi.contentFromURL(url);
 			int totalMatches = -1;
 			
 			if (isHome) {
@@ -353,26 +298,6 @@ public class JinzoraContentDirectory extends AbstractContentDirectoryService {
 			Log.d(TAG, "Json content not found", e);
 			return null;
 		}
-	}
-	
-	private String contentFromURL(URL url) throws IOException {
-		Log.d(TAG, "getting content from " + url);
-		HttpURLConnection conn = (HttpURLConnection)url.openConnection();
-		conn.setConnectTimeout(20000);
-		InputStream in = conn.getInputStream();
-		conn.connect();
-		//String encoding = conn.getContentEncoding();
-		
-		StringBuffer stringBuffer = new StringBuffer();
-		byte[] buffer = new byte[2048];
-		int bytes;
-		while (true) {
-			bytes = in.read(buffer);
-			if (bytes == -1) break;
-			stringBuffer.append(new String(buffer, 0, bytes));
-		}
-		
-		return stringBuffer.toString();
 	}
 	
 	private void addDidlNodes(DIDLContent didl, JSONArray browse) throws JSONException {
@@ -417,30 +342,10 @@ public class JinzoraContentDirectory extends AbstractContentDirectoryService {
 	}
 	
 	private void addDidlTracks(DIDLContent didl, JSONArray browse) {
-		/*
-		 * {
-		 * "image":"..." [full size]
-		 * "thumbnail":"..." [75x75]
-		 * "name":"Vaka",
-		 * "album":"Hvarf-Heim",
-		 * "artist":"Sigur Ros",
-		 * "genre":"Alternative",
-		 * "playlink":"...", [m3u]
-		 * "download":"..." [mp3]
-		 * "metadata":
-		 *   {"title":"Vaka","bitrate":"192","frequency":"44.1",
-		 *   "filename":"03 Voka.mp3","size":"7.76","year":"2007",
-		 *   "comment":"","length":"321","number":"03","genre":"-",
-		 *   "artist":null,"album":"Hvarf-Heim [Disc Two] \"Heim\"","lyrics":""
-		 *   ,"type":"mp3"},
-		 * "path":"Alternative\/Sigur Ros\/Hvarf-Heim\/03 Voka.mp3",
-		 * "type":"Track"
-		 * }
-		 */
 		for (int i = 0; i < browse.length(); i++) {
 			try {
 				JSONObject track = browse.getJSONObject(i);
-				MusicTrack musicTrack = jsonToMusicTrack(track);
+				MusicTrack musicTrack = JinzoraApi.jsonToMusicTrack(track);
 		        didl.addItem(musicTrack);
 			} catch (Exception e) {
 				Log.w(TAG, "Bad json entry", e);
@@ -448,87 +353,6 @@ public class JinzoraContentDirectory extends AbstractContentDirectoryService {
 		}
 	}
 	
-	private MusicTrack jsonToMusicTrack(JSONObject track) {
-		String genre = track.optString("genre");
-		String album = track.optString("album");
-        String creator = track.optString("artist"); // Required
-        PersonWithRole artist = new PersonWithRole(creator, "Performer");
-        MimeType mimeType = new MimeType("audio", "mpeg");
-        
-        String trackId = track.optString("id");
-        if (trackId == null || trackId.length() == 0) {
-        	trackId = track.optString("path");
-        }
-        String parentId = "0";
-        String trackTitle = track.optString("name");
-        String trackUrl = track.optString("download");
-        String duration = "";
-        String thumbnail = track.optString("image");
-        	// TODO: bigger image in "thumbnail" (75x75 too small)
-        long bitrate = 0;
-        long size = 0;
-        Integer trackNumber = null;
-        
-        if (track.has("metadata")) {
-        	JSONObject meta = track.optJSONObject("metadata");
-        	if (meta.has("bitrate")) {
-        		try {
-	        		double br = Double.parseDouble(meta.getString("bitrate"));
-	        		bitrate = Math.round(br*128);
-        		} catch (Exception e) {}
-        	}
-        	if (meta.has("size")) {
-        		try {
-	        		double sz = Double.parseDouble(meta.getString("size"));
-	        		size = Math.round(sz*1024*1024);
-        		} catch (Exception e) {}
-        	}
-        	if (meta.has("length")) {
-        		try {
-	        		int len = Integer.parseInt(meta.getString("length"));
-	        		duration += (len / 60);
-	        		len = (len % 60);
-	        		if (len == 0) {
-	        			duration += ":00";
-	        		} else if (len < 10) {
-	        			duration += ":0" + len;
-	        		} else {
-	        			duration += ":" + len;
-	        		}
-        		} catch (Exception e) {}
-        	}
-        	if (meta.has("number")) {
-        		try {
-        			trackNumber = Integer.parseInt(meta.optString("number"));
-        		} catch (Exception e) {}
-        	}
-        }
-        MusicTrack musicTrack = new MusicTrack(
-                trackId, parentId,
-                trackTitle,
-                creator, album, artist,
-                new Res(mimeType, size, duration, bitrate, trackUrl
-    		));
-        
-        if (trackNumber != null) {
-        	musicTrack.setOriginalTrackNumber(trackNumber);
-        }
-        if (thumbnail != null && thumbnail.length() > 0) {
-        	try {
-        		URI uri = new URI(thumbnail);
-        		ALBUM_ART_URI albumArt = new ALBUM_ART_URI(uri);
-        		musicTrack.addProperty(albumArt);
-        	} catch (URISyntaxException e) {
-        		Log.w(TAG, "Found album art but bad URI", e);
-        	}
-        }
-        if (genre != null && genre.length() > 0) {
-        	GENRE propGenre = new GENRE(genre);
-        	musicTrack.addProperty(propGenre);
-        }
-        
-        return musicTrack;
-	}
 	
 	private class BrowseParameters {
 		String objectId;

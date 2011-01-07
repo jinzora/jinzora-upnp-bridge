@@ -47,10 +47,10 @@ public class MediaServer implements Runnable {
 
 		List<LocalService> localServices = new ArrayList<LocalService>();
 		
-			LocalService<JinzoraContentDirectory> jinzoraMediaService = new AnnotationLocalServiceBinder()
-					.read(JinzoraContentDirectory.class);
-			jinzoraMediaService.setManager(new DefaultServiceManager<JinzoraContentDirectory>(
-					jinzoraMediaService, JinzoraContentDirectory.class));
+			LocalService<CompatContentDirectory> jinzoraMediaService = new AnnotationLocalServiceBinder()
+					.read(CompatContentDirectory.class);
+			jinzoraMediaService.setManager(new DefaultServiceManager<CompatContentDirectory>(
+					jinzoraMediaService, CompatContentDirectory.class));
 			localServices.add(jinzoraMediaService);
 
 		LocalService<ConnectionManagerService> connectionManagerService =
@@ -62,7 +62,13 @@ public class MediaServer implements Runnable {
 		        )
 		);
 		localServices.add(connectionManagerService);
-	
+		
+		LocalService<MSMediaReceiverRegistrarService> receiverService =
+			new AnnotationLocalServiceBinder().read(MSMediaReceiverRegistrarService.class);
+		receiverService.setManager(new DefaultServiceManager<MSMediaReceiverRegistrarService>(
+				receiverService, MSMediaReceiverRegistrarService.class));
+		localServices.add(receiverService);
+		
 		return new LocalDevice(identity, type, details, icon, localServices.toArray(new LocalService[] {}));
 	}
 	
