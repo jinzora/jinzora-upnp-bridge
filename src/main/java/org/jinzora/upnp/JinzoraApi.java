@@ -59,8 +59,6 @@ public class JinzoraApi {
 	}
 	
 	public BrowseResult getAlbumsForArtist(String artist, long offset, long limit) {
-		Log.d(TAG, "Im trying to get albums for artist " + artist + " yet.");
-
 		String base = mConfig.getJinzoraEndpoint();
 		if (base == null) {
 			Log.w(TAG, "No jinzora service configured");
