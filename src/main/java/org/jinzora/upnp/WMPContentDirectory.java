@@ -74,6 +74,8 @@ public class WMPContentDirectory extends AbstractContentDirectoryService {
 		// This is a very hacky search method that covers the basics of what
 		// the XBox and WMP require.
 		
+		// can also determine query type by containerId.
+		
 		if (searchCriteria == null || searchCriteria.equalsIgnoreCase(
 				"upnp:class derivedfrom \"object.item.audioItem\" and @refID exists false")
 				|| searchCriteria.equalsIgnoreCase("(upnp:class derivedfrom \"object.item.audioItem\")")) {
@@ -91,6 +93,15 @@ public class WMPContentDirectory extends AbstractContentDirectoryService {
 		
 		if (searchCriteria.equalsIgnoreCase("(upnp:class = \"object.container.genre.musicGenre\")")) {
 			return mApi.getAllGenres(firstResult, maxResults);
+		}
+		
+		if (searchCriteria.startsWith("(upnp:class = \"object.container.album.musicAlbum\") and (upnp:artist = \"")) {
+			String query = searchCriteria;
+			int lastQuote = query.lastIndexOf('"');
+			query = query.substring(0, lastQuote);
+			int secondToLast = query.lastIndexOf('"');
+			String artist = query.substring(secondToLast + 1);
+			return mApi.getAlbumsForArtist(artist, firstResult, maxResults);
 		}
 
 		return super.search(containerId, searchCriteria, filter, firstResult,

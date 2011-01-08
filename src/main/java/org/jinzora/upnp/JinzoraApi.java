@@ -58,6 +58,34 @@ public class JinzoraApi {
 		return getResultForType("track", offset, limit);
 	}
 	
+	public BrowseResult getAlbumsForArtist(String artist, long offset, long limit) {
+		Log.d(TAG, "Im trying to get albums for artist " + artist + " yet.");
+
+		String base = mConfig.getJinzoraEndpoint();
+		if (base == null) {
+			Log.w(TAG, "No jinzora service configured");
+			return null;
+		}
+		
+		String query = "";
+		try {
+			query = URLEncoder.encode("@album @artist " + artist + " @limit " + 99999, "UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			// Ignored
+		}
+		
+		URL url;
+		try {
+			base += "&request=search&output=json&&query=" + query;
+			base += "&jz_path="+URLEncoder.encode("/","UTF-8");
+			url = new URL(base);
+		} catch (Exception e) {
+			return null;
+		}
+		
+		return getResultForUrl(url);
+	}
+	
 	private BrowseResult getResultForType(String type, long offset, long limit) {
 		String base = mConfig.getJinzoraEndpoint();
 		if (base == null) {
@@ -75,6 +103,10 @@ public class JinzoraApi {
 			return null;
 		}
 		
+		return getResultForUrl(url);
+	}
+	
+	private BrowseResult getResultForUrl(URL url) {
 		String content;
 		try {
 			content = contentFromURL(url);
