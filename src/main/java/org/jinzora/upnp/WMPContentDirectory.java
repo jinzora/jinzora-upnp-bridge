@@ -42,8 +42,7 @@ public class WMPContentDirectory extends AbstractContentDirectoryService {
 		public static final String MUSIC_ALBUM = "7";
 	}
 	
-	private UpnpConfiguration upnpConfig = new UpnpConfiguration();
-	private JinzoraApi mApi = new JinzoraApi(upnpConfig);
+	private JinzoraApi mApi = new JinzoraApi(mConfig);
 	
 	private class BrowseParameters {
 		String objectId;
@@ -217,8 +216,7 @@ public class WMPContentDirectory extends AbstractContentDirectoryService {
 			base = objectId;
 			isHome = false;
 		} else {
-			UpnpConfiguration config = new UpnpConfiguration();
-			base = config.getJinzoraEndpoint();
+			base = mConfig.getJinzoraEndpoint();
 			if (base == null) {
 				Log.w(TAG, "No jinzora service configured");
 				return null;

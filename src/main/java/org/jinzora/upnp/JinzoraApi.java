@@ -148,7 +148,7 @@ public class JinzoraApi {
 		try {
 			Log.d(TAG, "search returned " + size);
 			String result = new DIDLParser().generate(didl);
-			Log.d(TAG, "returning didl.");
+			Log.d(TAG, "returning didl: " + result);
 			return new BrowseResult(result, size, totalMatches);
 		} catch (Exception e) {
 			Log.e(TAG, "Error generating didl", e);
@@ -218,10 +218,10 @@ public class JinzoraApi {
         String additionalInfo = "DLNA.ORG_PN=MP3;DLNA.ORG_OP=01;DLNA.ORG_CI=0;DLNA.ORG_FLAGS=" + flagsStr;
         
         ProtocolInfo protocolInfo = new ProtocolInfo(Protocol.HTTP_GET, network, mimeType.toString(), additionalInfo);
-        Res res = new Res(protocolInfo, size, trackUrl);
+        // "size" is not always returned accurately, and causes trouble on some systems (ps3)
+        Res res = new Res(protocolInfo, null /*size*/, trackUrl);
         res.setBitrate(bitrate);
         res.setDuration(duration);
-        
         MusicTrack musicTrack = new MusicTrack(
                 trackId, parentId,
                 trackTitle,
